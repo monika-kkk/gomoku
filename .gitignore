@@ -1,0 +1,24 @@
+# Created by .ignore support plugin (hsz.mobi)
+### Haskell template
+dist-*
+cabal-dev
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+*.eventlog
+.stack-work/
+cabal.project.local
+.HTF/
+
+/.idea/
+/haskell-exercises (root).iml
+/haskell-exercises.iml
+/haskell-exercises.cabal
