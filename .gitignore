@@ -21,4 +21,4 @@ cabal.project.local
 /.idea/
 /haskell-exercises (root).iml
 /haskell-exercises.iml
-/haskell-exercises.cabal
+/to-do

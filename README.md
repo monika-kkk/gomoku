@@ -1,2 +1,2 @@
-# haskell-exercises
+# Gomoku
 
