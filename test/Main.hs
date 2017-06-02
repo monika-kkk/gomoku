@@ -6,13 +6,21 @@ import Board
 import Test.HUnit
 import Test.Hspec
 
--- import Control.Exception (evaluate)
+{-# ANN module ("HLint: ignore Redundant do" :: String) #-}
+
 main :: IO ()
 main =
   hspec $ do
-    describe "gameIsOver" $ do
-      it "returns false if there is no five symbols in the row, col or on the diagonal" $ do
-        (gameIsOver (2, 4) $ putSymbol X (2, 4) initBoard) @?= False
-
-
--- quickCheck - random values, general approach
+    describe "Board" $ do
+      describe "isWinningSetting" $ do
+        it "returns false if there is no five symbols side by side" $ do
+            isWinningSetting X "XXXX_OO" @?= False
+            isWinningSetting O "_OOOOOO" @?= False
+            isWinningSetting X "OXXXXOOXOOOOX" @?= False
+        it "returns true if there is exactly five symbols side by side" $ do
+            isWinningSetting X "XXXXX_XXX" @?= True
+            isWinningSetting O "_XXOOOOO_" @?= True
+            isWinningSetting O "_XXOOOOO" @?= True
+        it "returns false if there is too many symbols" $ do
+            isWinningSetting X "XXXXXXOO" @?= False
+            isWinningSetting O "_OOOOOOXX" @?= False
