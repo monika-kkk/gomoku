@@ -1,8 +1,7 @@
 module Board
 ( initBoard
 , putSymbol
-, statesInRow
-, statesInCol
+, isWinningSetting
 , gameIsOver
 , Symbol(..)
 , Board(..)
@@ -10,32 +9,41 @@ module Board
 , showBoard
 ) where
 
-import Data.Matrix
--- import Data.Vector
-import Data.Char
 import Data.List
-import Data.String
-import Data.String.Utils
-import Prelude
-import Data.List.Split
-import Debug.Trace
-
--- {-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleInstances #-}
--- :set -XTypeSynonymInstances
+import Data.Matrix
+import qualified Data.Vector as V
 
 type Pos = (Int, Int)
-data Symbol = Empty | X | O deriving (Eq, Read)
+data Symbol = X | O | Empty deriving (Eq, Read)
 type Board = Matrix Symbol
--- newtype Board = Board {getBoard :: Matrix Symbol}
---type/newtype/data <- diff, problem with newtype, show with type, const def
 
 instance Show Symbol where
     show X = "X"
     show O = "O"
     show Empty = "_"
 
--- instance Show Board where
---     show = boardToString
+formattedNumber :: Int -> String
+formattedNumber n
+    | n < 10 = " " ++ show n
+    | otherwise = show n
+
+rowWithColsNumbers :: String
+rowWithColsNumbers = "   "
+                  ++ foldr (\n str -> formattedNumber n ++ " " ++ str) "" [1..dim]
+                  ++ "\n"
+
+rowToString :: Int -> Board -> String
+rowToString n board = formattedNumber n
+                   ++ "  "
+                   ++ foldr (\symbol result -> show symbol ++ "  " ++ result) "" (getRow n board)
+
+showBoard :: Board -> String
+showBoard board = rowWithColsNumbers ++ unlines [rowToString row board | row <- [1..dim]]
+
+concatListOfSymbols :: [Symbol] -> String
+concatListOfSymbols = concatMap show
+
+-------------------------------------------------------------
 
 dim :: Int
 dim = 11
@@ -43,37 +51,18 @@ dim = 11
 initBoard :: Board
 initBoard = matrix dim dim (\(i,j) -> Empty)
 
--- concatVectorOfSymbols :: Vector Symbol -> String
--- first usage => type ?
-concatVectorOfSymbols = foldr (\symbol result -> show symbol ++ result) ""
-concatListOfSymbols = foldr (\symbol result -> show symbol ++ result) ""
-
-rowToString :: Int -> Board -> String
-rowToString n board = formattedNumber n ++ "  " ++ foldr (\symbol result -> show symbol ++ "  " ++ result) "" (getRow n board)
-
-formattedNumber :: Int -> String
-formattedNumber n
-    | n < 10 = " " ++ show n
-    | otherwise = show n
-
-colsNumbersString :: String
-colsNumbersString = "   " ++ foldr (\n str -> formattedNumber n ++ " " ++ str) "" [1..dim] ++ "\n"
-
-boardToString :: Board -> String
-boardToString board = colsNumbersString ++ unlines [rowToString row board | row <- [1..dim]]
-
-showBoard = boardToString
-
 putSymbol :: Symbol -> Pos -> Board -> Board
 putSymbol = setElem
 
--------------------------------------------------------------
+oppositeSymbol symbol
+    | symbol == X = O
+    | symbol == O = X
 
 statesInRow :: Int -> Board -> String
-statesInRow n board = concatVectorOfSymbols $ getRow n board
+statesInRow n board = concatMap show (V.toList $ getRow n board)
 
 statesInCol :: Int -> Board -> String
-statesInCol n board = concatVectorOfSymbols $ getCol n board
+statesInCol n board = concatMap show (V.toList $ getCol n board)
 
 statesDiagonalFromLeft :: Pos -> Board -> String
 statesDiagonalFromLeft (row,col) board =
@@ -83,35 +72,29 @@ statesDiagonalFromRight :: Pos -> Board -> String
 statesDiagonalFromRight (row,col) board =
     concatListOfSymbols [getElem x y board | x <- [1..dim], y <- [1..dim], (row-x) == (y-col)]
 
+--------------------------------------------------
+
+data Type = I | P | S
+
+generateStates :: Symbol -> Type -> [String]
+generateStates symbol t = case t of
+                            I -> [pref ++ replFive ++ suff | pref <- otherSymbols, suff <- otherSymbols]
+                            P -> [replFive ++ suff | suff <- otherSymbols]
+                            S -> [pref ++ replFive | pref <- otherSymbols]
+                            where otherSymbols = ["_", show $ oppositeSymbol symbol]
+                                  replFive = concatListOfSymbols $ replicate 5 symbol
+
+isWinningSetting :: Symbol -> String -> Bool
+isWinningSetting lastInsertedSymbol statesAsString =
+                 any (`isPrefixOf` statesAsString) (generateStates lastInsertedSymbol P) ||
+                 any (`isSuffixOf` statesAsString) (generateStates lastInsertedSymbol S) ||
+                 any (`isInfixOf` statesAsString) (generateStates lastInsertedSymbol I)
+
 gameIsOver :: Pos -> Board -> Bool
-gameIsOver (row, col) board = any (winningSetting symbol board) allLists
-    where rowAsString = statesInRow row board
-          colAsString = statesInCol col board
-          diagonalFromLeftAsString = statesDiagonalFromLeft (row,col) board
-          diagonalFromRightAsString = statesDiagonalFromRight (row,col) board
-          allLists = [rowAsString,colAsString,diagonalFromLeftAsString,diagonalFromRightAsString]
-          symbol = getElem row col board
-
-winningSetting :: Symbol -> Board -> String -> Bool
--- winningSetting sym board valAsString | Debug.Trace.trace ("Params: " ++ show sym ++ " " ++ valAsString) False = undefined
-winningSetting sym board valAsString
-    | sym == O = any (\val -> isPrefixOf val valAsString) prefixesO ||
-                 any (\val -> isSuffixOf val valAsString) suffixesO ||
-                 any (\val -> isInfixOf val valAsString) infixesO
-    | sym == X = any (\val -> isPrefixOf val valAsString) prefixesX ||
-                 any (\val -> isSuffixOf val valAsString) suffixesX ||
-                 any (\val -> isInfixOf val valAsString) infixesX
-    where prefixesO = ["OOOOOX","OOOOO_"]
-          suffixesO = ["XOOOOO","_OOOOO"]
-          infixesO = ["XOOOOOX","_OOOOO_","XOOOOO_","_OOOOOX"]
-          prefixesX = ["XXXXXO","XXXXX_"]
-          suffixesX = ["OXXXXX","_XXXXX"]
-          infixesX = ["OXXXXXO","_XXXXX_","OXXXXX_","_XXXXXO"]
---empty, < 5
-
------------------------------------------------------------------
-
-
--- paramethers order, files, tests, enum,  nested functions
--- Symbol/Empty
--- import/export cleanup
+gameIsOver lastInsertedPos@(r, c) board = any (isWinningSetting symbol) statesToCheck
+    where row = statesInRow r board
+          col = statesInCol c board
+          diagLeft = statesDiagonalFromLeft (r,c) board
+          diagRight = statesDiagonalFromRight (r,c) board
+          statesToCheck = [row, col, diagLeft, diagRight]
+          symbol = getElem r c board
