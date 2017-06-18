@@ -45,7 +45,7 @@ rateSequence  string =  fourX + threeX - fourO - threeO + counterX - counterO
     where fourX = 1000 * infixCounter ["X_XXX","XX_XX","XXX_X","_XXXX","XXXX_"]
           fourO = 1000 * infixCounter ["O_OOO","OO_OO","OOO_O","_OOOO","OOOO_"]
           threeX = 10 * infixCounter ["XXX__","XX__X","X__XX","__XXX","_X_XX","X_X_X","XX_X_"]
-          threeO = 10 * infixCounter ["OOO__","OO__O","O__OO","__OOO","_O_OO","O_O_O","OO_O_"]
+          threeO = 30 * infixCounter ["OOO__","OO__O","O__OO","__OOO","_O_OO","O_O_O","OO_O_"]
           counterX = length $ filter (== 'X') string
           counterO = length $ filter (== 'O') string
           infixCounter infixes = length $ filter (`isInfixOf` string) infixes
